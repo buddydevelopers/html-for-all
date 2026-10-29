@@ -1,164 +1,382 @@
 <?php
 /**
- * File to add setting for the plugin
+ * Settings screen for choosing which post types use a .html suffix.
  *
- * @package HFA\Setting
+ * @package HFA
  */
 
 namespace BUDDY_SEO_URL;
-// If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
-	die;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
- * Class Html_For_All_AdminSettings to add admin page setting for plugin.
+ * Admin settings page.
  */
 class Html_For_All_AdminSettings {
 
 	/**
-	 *  Html_For_All_AdminSettings class instance
+	 * Singleton instance.
 	 *
-	 *  @var private static $instance
+	 * @var self|null
 	 */
-	private static $instance;
+	private static ?self $instance = null;
 
 	/**
-	 * __construct Html_For_All_AdminSettings class constructor
+	 * Hooks the settings screen.
 	 */
-	function __construct() {
-		add_filter( 'plugin_action_links_' . HFA_PLUGIN_BASENAME, array( $this, 'hfa_settings_page_link' ) );
-		add_action( 'admin_menu', array( $this, 'hfa_settings_plugin_menu' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'hfa_add_setting_style' ) );
+	private function __construct() {
+		add_filter( 'plugin_action_links_' . HFA_PLUGIN_BASENAME, array( $this, 'add_settings_link' ) );
+		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		add_action( 'admin_init', array( $this, 'handle_settings_save' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
 	}
 
 	/**
-	 * Get class instance in singleton way.
-	 *
-	 * @return object Html_For_All_AdminSettings::$instance
+	 * Returns the shared instance.
 	 */
-	public static function get_instance() {
-		if ( empty( SELF::$instance ) ) {
-			$instance = new Html_For_All_AdminSettings();
+	public static function get_instance(): self {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
 		}
-		return SELF::$instance;
+
+		return self::$instance;
 	}
 
 	/**
-	 * Add style for setting form
+	 * Loads the settings stylesheet on this screen only.
+	 *
+	 * @param mixed $hook Current admin page hook.
 	 */
-	function hfa_add_setting_style() {
-		wp_enqueue_style( 'hfa_setting_style', plugins_url( 'style.css', __FILE__ ) );
+	public function enqueue_styles( $hook ): void {
+		if ( 'toplevel_page_hfa-settings' !== $hook ) {
+			return;
+		}
+
+		$style_path = plugin_dir_path( __FILE__ ) . 'style.css';
+		$version    = HFA_VERSION;
+		if ( is_readable( $style_path ) ) {
+			$version .= '.' . filemtime( $style_path );
+		}
+
+		wp_enqueue_style(
+			'hfa-setting-style',
+			plugins_url( 'style.css', __FILE__ ),
+			array( 'dashicons' ),
+			$version
+		);
+
+		$script_path = plugin_dir_path( __FILE__ ) . 'script.js';
+		$script_ver  = HFA_VERSION;
+		if ( is_readable( $script_path ) ) {
+			$script_ver .= '.' . filemtime( $script_path );
+		}
+
+		wp_enqueue_script(
+			'hfa-setting-script',
+			plugins_url( 'script.js', __FILE__ ),
+			array(),
+			$script_ver,
+			true
+		);
 	}
 
 	/**
-	 * Add a link to the plugin settings page.
+	 * Adds a Settings link on the Plugins screen.
 	 *
-	 * @since  1.0
-	 *
-	 * @param  array $links Plugin links.
-	 *
-	 * @return array  Links with the settings
+	 * @param mixed $links Plugin action links.
+	 * @return array<int, string>
 	 */
-	function hfa_settings_page_link( $links ) {
+	public function add_settings_link( $links ) {
+		if ( ! is_array( $links ) ) {
+			$links = array();
+		}
 
-		$link    = $this->hfa_get_settings_page_url();
-		$links[] = '<a href="' . $link . '">' . __( 'Settings', 'awesome-support' ) . '</a>';
+		$links[] = '<a href="' . esc_url( $this->get_settings_page_url() ) . '">' . esc_html__( 'Settings', 'html-for-all' ) . '</a>';
 
 		return $links;
-
 	}
 
 	/**
-	 * Function to create setting page URL for plugin.
-	 *
-	 * @return String Setting page URL
+	 * Registers a top-level admin menu.
 	 */
-	function hfa_get_settings_page_url() {
-		$query_args = array( 'page' => 'hfa-settings' );
-		$admin_settings_url  = admin_url( 'options-general.php' );
-		return add_query_arg( $query_args, $admin_settings_url );
+	public function register_menu(): void {
+		add_menu_page(
+			__( '.html For All', 'html-for-all' ),
+			__( '.html For All', 'html-for-all' ),
+			'manage_options',
+			'hfa-settings',
+			array( $this, 'render_page' ),
+			'dashicons-admin-links',
+			81
+		);
+
+		add_submenu_page(
+			'hfa-settings',
+			__( 'Post types', 'html-for-all' ),
+			__( 'Post types', 'html-for-all' ),
+			'manage_options',
+			'hfa-settings',
+			array( $this, 'render_page' )
+		);
 	}
 
 	/**
-	 * Function to add HFA setting page
+	 * Stores the form submission before the page is rendered.
 	 */
-	function hfa_settings_plugin_menu() {
-		add_options_page( 'HFA Settings', '.html For All', 'manage_options', 'hfa-settings', array( $this, 'hfa_settings_callback' ) );
-	}
-
-	/**
-	 * HTML for all setting page.
-	 */
-	function hfa_settings_callback() {
-		if ( isset( $_POST['hfa_save_post_types'] ) && ! empty( $_POST['hfa_save_post_types'] ) ) {
-			$selected_post_type = array();
-			if ( isset( $_POST['hfa_post_types'] )  && ! empty( $_POST['hfa_post_types'] ) ) {
-				$selected_post_type = wp_unslash( $_POST['hfa_post_types'] );
-			}
-			global $wp_rewrite;
-			if ( ! empty( $selected_post_type ) && in_array( 'post', $selected_post_type ) ) {
-				$permalink_structure = get_option( 'permalink_structure' );
-				if ( ! empty( $permalink_structure ) ) {
-					if ( ! strpos( $permalink_structure , '.html' ) ) {
-						update_option( 'old_permalink_structure', $permalink_structure );
-					}
-					$permalink_structure = explode( '/', $permalink_structure );
-					$total_element = count( $permalink_structure );
-					if ( isset( $permalink_structure[ $total_element - 1 ] ) && empty( $permalink_structure[ $total_element - 1 ] ) ) {
-						unset( $permalink_structure[ $total_element - 1 ] );
-						$permalink_structure = implode( '/', $permalink_structure );
-						$permalink_structure .= '.html';
-						update_option( 'permalink_structure', $permalink_structure );
-					}
-				}
-			} else {
-				$old_permalink_structure = get_option( 'old_permalink_structure' );
-				$permalink_structure = get_option( 'permalink_structure' );
-				if ( ! empty( $old_permalink_structure ) && strpos( $permalink_structure , '.html' ) ) {
-					update_option( 'permalink_structure', $old_permalink_structure );
-				}
-			}
-			$wp_rewrite->flush_rules();
-
-			update_option( 'hfa_selected_post_type', $selected_post_type );
+	public function handle_settings_save(): void {
+		if ( ! isset( $_POST['hfa_save_post_types'] ) ) {
+			return;
 		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die(
+				esc_html__( 'You do not have permission to manage these settings.', 'html-for-all' ),
+				'',
+				array( 'response' => 403 )
+			);
+		}
+
+		check_admin_referer( 'hfa_save_settings' );
+
+		$raw = array();
+		if ( isset( $_POST['hfa_post_types'] ) ) {
+			$raw = wp_unslash( $_POST['hfa_post_types'] );
+		}
+
+		if ( ! is_array( $raw ) ) {
+			$raw = array();
+		}
+
+		Html_For_All::get_instance()->update_selected_post_types( $raw );
+
+		wp_safe_redirect( add_query_arg( 'hfa-updated', '1', $this->get_settings_page_url() ) );
+		exit;
+	}
+
+	/**
+	 * Renders the settings page.
+	 */
+	public function render_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$updated = '';
+		if ( isset( $_GET['hfa-updated'] ) ) {
+			$updated = sanitize_text_field( wp_unslash( $_GET['hfa-updated'] ) );
+		}
+
+		$post_types = Html_For_All::get_instance()->get_supported_post_types();
+		$selected   = get_option( 'hfa_selected_post_type', array() );
+		if ( ! is_array( $selected ) ) {
+			$selected = array();
+		}
+
+		$selected = array_values(
+			array_filter(
+				array_map(
+					static function ( $post_type ) {
+						return is_string( $post_type ) ? sanitize_key( $post_type ) : '';
+					},
+					$selected
+				)
+			)
+		);
+		$selected_count = count( array_intersect( $post_types, $selected ) );
 		?>
-		<div class='hfa_setting_containre'>
-			<div class="hfa_pluing_information">
-				<p class='hfa_info update'> In terms of SEO and ranking, there is little benefit to keeping the .html extension present in your URLs. </p>
-			</div>
-			<div class="hfa_setting_form">
-				<form method='post'>
-				<?php
-					$args = array(
-					   'public'   => true,
-					   '_builtin' => false,
-					);
-					$post_types = get_post_types( $args );
-					$restricted_post_types = array( 'post', 'page' );
-					$post_types = array_merge( $restricted_post_types, $post_types );
-				if ( ! empty( $post_types ) ) {
-					$selected_post_type = get_option( 'hfa_selected_post_type' );
-					echo "<ul  class='post_types_lists'>";
-					foreach ( $post_types as $post_type ) {
-						$checked = '';
-						if ( ! empty( $selected_post_type ) && in_array( $post_type, $selected_post_type ) ) {
-							$checked = 'checked';
-						}
-						$post_type_name = strtoupper( $post_type );
-						$post_type_name = str_replace( '_', ' ', $post_type_name );
-						echo '<li>';
-							echo '<input type="checkbox" ' . esc_html( $checked ) . ' name="hfa_post_types[ ]" value="' . esc_html( $post_type ) . '">';
-							echo '<label>' . esc_html( $post_type_name ) . '</Label>';
-						echo '</li>';
-					}
-					echo '<li> <input type="submit" name="hfa_save_post_types" class="button  button-primary button-large" value="Save"> </li>';
-					echo '</ul>';
-				}
-				?>
+		<div class="wrap hfa-wrap">
+			<hr class="wp-header-end" />
+			<?php if ( '1' === $updated ) : ?>
+				<div class="notice notice-success is-dismissible">
+					<p><?php echo esc_html__( 'Settings saved.', 'html-for-all' ); ?></p>
+				</div>
+			<?php endif; ?>
+			<?php if ( ! get_option( 'permalink_structure' ) ) : ?>
+				<div class="notice notice-warning">
+					<p>
+						<?php echo esc_html__( 'Pretty permalinks are turned off. Choose a permalink structure other than Plain before .html suffixes can be applied.', 'html-for-all' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'options-permalink.php' ) ); ?>"><?php echo esc_html__( 'Open Permalink Settings', 'html-for-all' ); ?></a>
+					</p>
+				</div>
+			<?php endif; ?>
+			<div class="hfa-shell">
+				<header class="hfa-hero">
+					<div class="hfa-hero__copy">
+						<p class="hfa-kicker"><?php echo esc_html__( 'Permalink suffix', 'html-for-all' ); ?></p>
+						<h1><?php echo esc_html__( '.html For All', 'html-for-all' ); ?></h1>
+						<p><?php echo esc_html__( 'Choose which content keeps a .html ending on its permalink.', 'html-for-all' ); ?></p>
+					</div>
+					<div class="hfa-preview" aria-hidden="true">
+						<span class="hfa-preview__dot"></span>
+						<span class="hfa-preview__dot"></span>
+						<span class="hfa-preview__dot"></span>
+						<span class="hfa-preview__url">
+							<span>yoursite.com/sample-page</span><strong>.html</strong>
+						</span>
+					</div>
+				</header>
+				<form class="hfa-panel" method="post" action="<?php echo esc_url( $this->get_settings_page_url() ); ?>">
+					<?php wp_nonce_field( 'hfa_save_settings' ); ?>
+					<div class="hfa-panel__intro">
+						<div>
+							<h2><?php echo esc_html__( 'Post types', 'html-for-all' ); ?></h2>
+							<p><?php echo esc_html__( 'In terms of SEO and ranking, there is little benefit to keeping the .html extension present in your URLs.', 'html-for-all' ); ?></p>
+						</div>
+						<p
+							class="hfa-pill"
+							data-hfa-count
+							data-one="<?php echo esc_attr__( '%s post type selected', 'html-for-all' ); ?>"
+							data-many="<?php echo esc_attr__( '%s post types selected', 'html-for-all' ); ?>"
+						>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: number of selected post types. */
+									_n( '%s post type selected', '%s post types selected', $selected_count, 'html-for-all' ),
+									number_format_i18n( $selected_count )
+								)
+							);
+							?>
+						</p>
+					</div>
+					<?php if ( array() === $post_types ) : ?>
+						<p class="hfa-empty"><?php echo esc_html__( 'No public post types with rewrites were found.', 'html-for-all' ); ?></p>
+					<?php else : ?>
+						<div class="hfa-grid">
+							<?php foreach ( $post_types as $post_type ) : ?>
+								<?php
+								$label = $this->post_type_label( $post_type );
+								$path   = $this->example_path( $post_type );
+								$base   = (string) preg_replace( '/\.html$/', '', $path );
+								?>
+								<label class="hfa-card">
+									<input type="checkbox" name="hfa_post_types[]" value="<?php echo esc_attr( $post_type ); ?>" <?php checked( in_array( $post_type, $selected, true ) ); ?> />
+									<span class="hfa-card__icon dashicons <?php echo esc_attr( $this->post_type_icon( $post_type ) ); ?>" aria-hidden="true"></span>
+									<span class="hfa-card__body">
+										<span class="hfa-card__name"><?php echo esc_html( $label ); ?></span>
+										<span class="hfa-card__path"><?php echo esc_html( $base ); ?><span class="hfa-ext">.html</span></span>
+									</span>
+									<span class="hfa-check" aria-hidden="true"></span>
+								</label>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+					<div class="hfa-actions">
+						<p class="hfa-hint"><?php echo esc_html__( 'Changes apply after you save. Rewrite rules refresh automatically.', 'html-for-all' ); ?></p>
+						<button type="submit" name="hfa_save_post_types" class="button button-primary hfa-save" value="1"><?php echo esc_html__( 'Save changes', 'html-for-all' ); ?></button>
+					</div>
 				</form>
 			</div>
 		</div>
-	<?php }
+		<?php
+	}
+
+	/**
+	 * Name shown on a content card.
+	 */
+	private function post_type_label( string $post_type ): string {
+		$components = Html_For_All::get_instance()->get_buddypress_components();
+		if ( isset( $components[ $post_type ]['label'] ) ) {
+			return $components[ $post_type ]['label'];
+		}
+
+		$object = get_post_type_object( $post_type );
+		if ( $object instanceof \WP_Post_Type && isset( $object->labels->name ) ) {
+			return (string) $object->labels->name;
+		}
+
+		return $post_type;
+	}
+
+	/**
+	 * Dashicon used on a post type card.
+	 */
+	private function post_type_icon( string $post_type ): string {
+		if ( 'page' === $post_type ) {
+			return 'dashicons-admin-page';
+		}
+
+		if ( 'post' === $post_type ) {
+			return 'dashicons-admin-post';
+		}
+
+		if ( 'bp_members' === $post_type ) {
+			return 'dashicons-admin-users';
+		}
+
+		if ( 'bp_groups' === $post_type ) {
+			return 'dashicons-groups';
+		}
+
+		if ( 'bp_activity' === $post_type ) {
+			return 'dashicons-buddicons-activity';
+		}
+
+		return 'dashicons-portfolio';
+	}
+
+	/**
+	 * Sample path shown on a post type card.
+	 */
+	private function example_path( string $post_type ): string {
+		if ( 'post' === $post_type ) {
+			return '/sample-post.html';
+		}
+
+		if ( 'page' === $post_type ) {
+			return '/sample-page.html';
+		}
+
+		$components = Html_For_All::get_instance()->get_buddypress_components();
+		if ( isset( $components[ $post_type ]['slug'] ) ) {
+			$slug = $components[ $post_type ]['slug'];
+			if ( 'bp_activity' === $post_type ) {
+				return '/' . $slug . '/p/1.html';
+			}
+
+			return '/' . $slug . '/sample.html';
+		}
+
+		$object = get_post_type_object( $post_type );
+		$slug   = ( $object instanceof \WP_Post_Type && ! empty( $object->rewrite['slug'] ) ) ? $object->rewrite['slug'] : $post_type;
+		$path   = '/' . trim( (string) $slug, '/' );
+
+		if ( function_exists( 'geodir_is_gd_post_type' ) && geodir_is_gd_post_type( $post_type ) && function_exists( 'geodir_get_permalink_structure' ) ) {
+			$structure = geodir_get_permalink_structure();
+			if ( ! is_string( $structure ) || '' === $structure ) {
+				$structure = '/%postname%/';
+			}
+
+			$path .= untrailingslashit( $structure );
+			$path  = (string) preg_replace_callback(
+				'/%([^%]+)%/',
+				static function ( array $matches ): string {
+					$samples = array(
+						'country'  => 'country',
+						'region'   => 'region',
+						'city'     => 'city',
+						'category' => 'category',
+						'postname' => 'sample',
+						'post_id'  => '1',
+					);
+
+					return $samples[ $matches[1] ] ?? $matches[1];
+				},
+				$path
+			);
+
+			return untrailingslashit( $path ) . '.html';
+		}
+
+		return $path . '/sample.html';
+	}
+
+	/**
+	 * Settings page URL.
+	 */
+	private function get_settings_page_url(): string {
+		return admin_url( 'admin.php?page=hfa-settings' );
+	}
 }
