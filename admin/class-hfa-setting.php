@@ -201,6 +201,7 @@ class Html_For_All_AdminSettings {
 					</p>
 				</div>
 			<?php endif; ?>
+			<div class="hfa-layout">
 			<div class="hfa-shell">
 				<header class="hfa-hero">
 					<div class="hfa-hero__copy">
@@ -269,7 +270,69 @@ class Html_For_All_AdminSettings {
 					</div>
 				</form>
 			</div>
+			<?php $this->render_sidebar(); ?>
+			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the BuddyDevelopers services sidebar.
+	 */
+	private function render_sidebar(): void {
+		$services = array(
+			array(
+				'icon'  => 'dashicons-location-alt',
+				'title' => __( 'Directory websites', 'html-for-all' ),
+				'text'  => __( 'Listing and business directories built on GeoDirectory.', 'html-for-all' ),
+			),
+			array(
+				'icon'  => 'dashicons-groups',
+				'title' => __( 'Community websites', 'html-for-all' ),
+				'text'  => __( 'Membership and social sites with BuddyPress and BuddyBoss.', 'html-for-all' ),
+			),
+			array(
+				'icon'  => 'dashicons-cart',
+				'title' => __( 'eCommerce stores', 'html-for-all' ),
+				'text'  => __( 'WooCommerce stores that are fast and easy to manage.', 'html-for-all' ),
+			),
+		);
+		?>
+		<aside class="hfa-sidebar">
+			<div class="hfa-side-card hfa-side-card--brand">
+				<p class="hfa-kicker"><?php echo esc_html__( 'Built by BuddyDevelopers', 'html-for-all' ); ?></p>
+				<h2><?php echo esc_html__( 'Need help with your WordPress site?', 'html-for-all' ); ?></h2>
+				<p><?php echo esc_html__( 'We are a WordPress agency that plans, builds and maintains websites.', 'html-for-all' ); ?></p>
+				<ul class="hfa-services">
+					<?php foreach ( $services as $service ) : ?>
+						<li>
+							<span class="dashicons <?php echo esc_attr( $service['icon'] ); ?>" aria-hidden="true"></span>
+							<span>
+								<strong><?php echo esc_html( $service['title'] ); ?></strong>
+								<?php echo esc_html( $service['text'] ); ?>
+							</span>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+				<a class="hfa-side-link" href="<?php echo esc_url( 'https://www.buddydevelopers.com/' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'Visit buddydevelopers.com', 'html-for-all' ); ?></a>
+			</div>
+			<div class="hfa-side-card">
+				<h2><?php echo esc_html__( 'Talk to us', 'html-for-all' ); ?></h2>
+				<p><?php echo esc_html__( 'Planning a new site, or need ongoing maintenance for an existing one? Book a call.', 'html-for-all' ); ?></p>
+				<a class="hfa-side-button hfa-side-button--primary" href="<?php echo esc_url( 'https://calendly.com/1naveengiri/discovery' ); ?>" target="_blank" rel="noopener noreferrer">
+					<?php echo esc_html__( 'Book a free discovery call', 'html-for-all' ); ?>
+				</a>
+				<a class="hfa-side-button" href="<?php echo esc_url( 'https://calendly.com/1naveengiri/consultation' ); ?>" target="_blank" rel="noopener noreferrer">
+					<?php echo esc_html__( 'Book a paid consultation', 'html-for-all' ); ?>
+				</a>
+				<p class="hfa-side-note"><?php echo esc_html__( 'The discovery call is free. The consultation is a paid, in-depth session.', 'html-for-all' ); ?></p>
+			</div>
+			<div class="hfa-side-card">
+				<h2><span class="dashicons dashicons-video-alt3" aria-hidden="true"></span><?php echo esc_html__( 'Learn on YouTube', 'html-for-all' ); ?></h2>
+				<p><?php echo esc_html__( 'Free tutorials on building directory, community and eCommerce sites with WordPress.', 'html-for-all' ); ?></p>
+				<a class="hfa-side-link" href="<?php echo esc_url( 'https://www.youtube.com/@buddydevelopers' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'Subscribe to our channel', 'html-for-all' ); ?></a>
+			</div>
+		</aside>
 		<?php
 	}
 
