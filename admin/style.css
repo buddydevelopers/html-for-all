@@ -29,14 +29,14 @@
 	gap: 28px;
 	padding: 28px 28px 26px;
 	background:
-		radial-gradient(420px 160px at 100% 0%, rgba(245, 165, 36, 0.35), transparent 70%),
+		radial-gradient(420px 160px at 100% 0%, #f0640c73, transparent 70%),
 		#172033;
 	color: #fff;
 }
 
 .hfa-kicker {
 	margin: 0 0 8px;
-	color: #f5c15d;
+	color: #ff9a5c;
 	font-size: 12px;
 	font-weight: 600;
 	letter-spacing: 0.08em;
@@ -82,7 +82,7 @@
 }
 
 .hfa-preview__dot:first-child {
-	background: #f5a524;
+	background: #f0640c;
 }
 
 .hfa-preview__url {
@@ -95,7 +95,7 @@
 }
 
 .hfa-preview__url strong {
-	color: #f5c15d;
+	color: #ff9a5c;
 	font-weight: 700;
 }
 
@@ -136,8 +136,8 @@
 	margin: 0;
 	padding: 6px 10px;
 	border-radius: 999px;
-	background: #fff6e4;
-	color: #8a5a00;
+	background: #fff0e6;
+	color: #9a3f05;
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 1.3;
@@ -185,7 +185,7 @@
 }
 
 .hfa-card:focus-within {
-	outline: 2px solid #f5a524;
+	outline: 2px solid #f0640c;
 	outline-offset: 2px;
 }
 
@@ -216,7 +216,7 @@
 
 .hfa-card:has(input:checked) .hfa-card__icon {
 	background: #172033;
-	color: #f5c15d;
+	color: #ff9a5c;
 }
 
 .hfa-card__body {
@@ -242,7 +242,7 @@
 }
 
 .hfa-ext {
-	color: #c4840d;
+	color: #c24f06;
 	font-weight: 700;
 }
 
@@ -256,8 +256,8 @@
 }
 
 .hfa-card:has(input:checked) .hfa-check {
-	border-color: #f5a524;
-	background: #f5a524;
+	border-color: #f0640c;
+	background: #f0640c;
 }
 
 .hfa-card:has(input:checked) .hfa-check::after {
@@ -302,7 +302,7 @@
 	border-color: #2a3850;
 	background: #2a3850;
 	color: #fff;
-	box-shadow: 0 0 0 1px #fff, 0 0 0 3px #f5a524;
+	box-shadow: 0 0 0 1px #fff, 0 0 0 3px #f0640c;
 }
 
 .hfa-sidebar {
@@ -342,7 +342,7 @@
 
 .hfa-side-card--brand {
 	background:
-		radial-gradient(260px 120px at 100% 0%, rgba(245, 165, 36, 0.3), transparent 70%),
+		radial-gradient(260px 120px at 100% 0%, #f0640c73, transparent 70%),
 		#172033;
 }
 
@@ -356,7 +356,7 @@
 
 .hfa-side-card--brand .hfa-kicker {
 	margin-bottom: 8px;
-	color: #f5c15d;
+	color: #ff9a5c;
 }
 
 .hfa-services {
@@ -379,7 +379,7 @@
 
 .hfa-services .dashicons {
 	flex: 0 0 auto;
-	color: #f5c15d;
+	color: #ff9a5c;
 }
 
 .hfa-services strong {
@@ -390,13 +390,13 @@
 }
 
 .hfa-side-link {
-	color: #c4840d;
+	color: #c24f06;
 	font-weight: 600;
 	text-decoration: none;
 }
 
 .hfa-side-card--brand .hfa-side-link {
-	color: #f5c15d;
+	color: #ff9a5c;
 }
 
 .hfa-side-link:hover,
@@ -424,15 +424,16 @@
 }
 
 .hfa-side-button--primary {
-	border-color: #f5a524;
-	background: #f5a524;
+	border-color: #f0640c;
+	background: #f0640c;
+	color: #fff;
 }
 
 .hfa-side-button--primary:hover,
 .hfa-side-button--primary:focus {
-	border-color: #e0941a;
-	background: #e0941a;
-	color: #172033;
+	border-color: #d55708;
+	background: #d55708;
+	color: #fff;
 }
 
 .hfa-side-card .hfa-side-note {
