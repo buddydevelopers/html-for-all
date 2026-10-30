@@ -7,7 +7,7 @@ Adds .html to pages, post, custom post type
 
 2) Activate .html for all plugin
 
-2) Now go to settings->.html For All
+2) Open the .html For All menu in wp-admin
 
 3) Select the Post type you want to have .html extension in it and save them.
 
